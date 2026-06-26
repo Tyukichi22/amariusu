@@ -1,0 +1,39 @@
+name: Robotics AI news site
+
+on:
+  schedule:
+    # 05:00 JST is 20:00 UTC on the previous day.
+    - cron: '0 20 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Build robotics AI news site
+        env:
+          AI_NEWS_FEEDS: ${{ vars.AI_NEWS_FEEDS }}
+          AI_NEWS_LOOKBACK_HOURS: ${{ vars.AI_NEWS_LOOKBACK_HOURS }}
+          AI_NEWS_MIN_SCORE: ${{ vars.AI_NEWS_MIN_SCORE }}
+          AI_NEWS_LIMIT: ${{ vars.AI_NEWS_LIMIT }}
+        run: python src/ai_news_digest.py --output-dir public
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+      - uses: actions/deploy-pages@v4
